@@ -1,0 +1,52 @@
+import requests
+import lxml
+from bs4 import BeautifulSoup
+from xlwt import *
+
+url = 'https://www.imdb.com/chart/top/'
+headers = {'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
+f = requests.get(url, headers = headers)
+
+soup = BeautifulSoup(f.content, 'lxml') 
+table = soup.find('table' , {'data-caller-name':"chart-top250movie"})
+tr = table.findAll('tr')
+#print(tr)
+movies_list = []
+num = 0
+
+workbook = Workbook(encoding = 'utf-8')
+table = workbook.add_sheet('data')
+table.write(0,0,'Rank')
+table.write(0,1,'Name')
+table.write(0,2,'Year')
+table.write(0,3,'URL')
+table.write(0,4,'Introduction')
+line = 1
+
+print(tr[0])
+
+for each_tr in tr:
+  td = each_tr.find_all('td' , class_ = 'titleColumn')
+  print(td)
+  for each_td in td:
+    ulink = each_td.a['href']
+    url = 'http://www.imdb.com'+ ulink
+    movies_list.append(url)
+    num += 1
+    movie_url = url
+    movie_f = requests.get(movie_url , headers = headers)
+    #print(movie_f)
+    movie_soup = BeautifulSoup(movie_f.content , 'lxml')
+    movie_content = movie_soup.find('span', {'data-testid':'plot-xl'})
+
+    movie_title = movie_soup.find('h1')
+
+    #print(num,url, '\n','Movie:' +str(movie_tile))
+    #print('Movie info:' + movie_content.string.strip())
+
+    table.write(line, 0, num)
+    table.write(line, 1, url)
+    table.write(line, 2, movie_title.string.strip())
+    table.write(line, 3, movie_content.string.strip())
+    line += 1
+    workbook.save('movie_top100.xls')
